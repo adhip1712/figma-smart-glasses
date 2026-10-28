@@ -26,6 +26,8 @@ export function useVoice({ wakeWord = 'Hey Vision', onCommand, enabled = true }:
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<Rec | null>(null)
   const isListeningRef = useRef(false)
+  const commandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestTranscriptRef = useRef('')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getAPI = (): (new () => Rec) | undefined => (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -35,6 +37,8 @@ export function useVoice({ wakeWord = 'Hey Vision', onCommand, enabled = true }:
     if (!API) { setError('Speech recognition not supported in this browser'); return }
     if (isListeningRef.current) return
 
+    if (commandTimerRef.current) clearTimeout(commandTimerRef.current)
+    latestTranscriptRef.current = ''
     const rec = new API() as Rec
     rec.continuous = !commandMode
     rec.interimResults = true
@@ -66,11 +70,19 @@ export function useVoice({ wakeWord = 'Hey Vision', onCommand, enabled = true }:
           }
         }
       } else {
-        if (lastFinal && text.trim().length > 0) {
-          setState('processing')
-          onCommand(stripWakeWord(text.trim()))
-          isListeningRef.current = false
-          rec.stop()
+        // Wait for a short silence instead of submitting on the first final chunk;
+        // speech recognition may deliver the rest of a long sentence in later events.
+        latestTranscriptRef.current = text.trim()
+        if (commandTimerRef.current) clearTimeout(commandTimerRef.current)
+        if (text.trim()) {
+          commandTimerRef.current = setTimeout(() => {
+            const completeText = latestTranscriptRef.current.trim()
+            if (!completeText || !isListeningRef.current) return
+            setState('processing')
+            isListeningRef.current = false
+            onCommand(stripWakeWord(completeText))
+            rec.stop()
+          }, 1200)
         }
       }
     }
@@ -84,8 +96,18 @@ export function useVoice({ wakeWord = 'Hey Vision', onCommand, enabled = true }:
     }
 
     rec.onend = () => {
+      if (commandTimerRef.current) clearTimeout(commandTimerRef.current)
+      commandTimerRef.current = null
+      const completeText = latestTranscriptRef.current.trim()
+      const endedUnexpectedly = isListeningRef.current
       isListeningRef.current = false
-      setState(prev => prev === 'processing' ? 'processing' : 'idle')
+      if (commandMode && endedUnexpectedly && completeText) {
+        setState('processing')
+        onCommand(stripWakeWord(completeText))
+      } else {
+        setState(prev => prev === 'processing' ? 'processing' : 'idle')
+      }
+      latestTranscriptRef.current = ''
       setTranscript('')
     }
 
@@ -93,11 +115,21 @@ export function useVoice({ wakeWord = 'Hey Vision', onCommand, enabled = true }:
   }, [wakeWord, onCommand])
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop()
+    if (commandTimerRef.current) clearTimeout(commandTimerRef.current)
+    commandTimerRef.current = null
+    const completeText = latestTranscriptRef.current.trim()
+    const shouldSend = isListeningRef.current && Boolean(completeText)
     isListeningRef.current = false
-    setState('idle')
+    recognitionRef.current?.stop()
+    if (shouldSend) {
+      setState('processing')
+      onCommand(stripWakeWord(completeText))
+    } else {
+      setState('idle')
+    }
+    latestTranscriptRef.current = ''
     setTranscript('')
-  }, [])
+  }, [onCommand])
 
   useEffect(() => { void enabled }, [enabled])
 

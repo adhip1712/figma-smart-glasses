@@ -18,6 +18,7 @@ export interface AskResponse {
   conversation_id: number
   response: string
   role: string
+  polished_message?: string
 }
 
 export const conversationsApi = {

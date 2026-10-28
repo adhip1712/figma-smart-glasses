@@ -3,6 +3,12 @@ dist/
 build/
 .cache/
 .env*
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/*.db
+backend/*.sqlite3
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo
