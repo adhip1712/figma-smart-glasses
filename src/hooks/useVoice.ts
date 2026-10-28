@@ -169,11 +169,8 @@ export function useVoice({ wakeWord = 'Vision', sensitivity = 'high', onCommand,
       const e = rawEvent as any
       if (e.error !== 'no-speech' && e.error !== 'aborted') setError(String(e.error))
       isListeningRef.current = false
-      if (wakeModeActiveRef.current && enabled) {
-        restartTimerRef.current = setTimeout(() => restartWakeRef.current?.(), 500)
-      } else {
-        setState('idle')
-      }
+      // onend owns wake-listener restarts; restarting here as well can create two recognizers.
+      if (!wakeModeActiveRef.current || !enabled) setState('idle')
     }
 
     rec.onend = () => {
