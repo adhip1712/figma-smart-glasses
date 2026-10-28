@@ -8,6 +8,7 @@ from app.core.logging import configure_logging
 from app.core.middleware import add_cors_middleware, add_rate_limit_middleware
 from app.db.base import Base
 from app.db.repositories import DEFAULT_SETTINGS, SettingsRepository
+from app.db.models import UserSetting
 from app.db.session import SessionLocal, engine
 
 configure_logging()
@@ -33,7 +34,19 @@ def startup() -> None:
     try:
         repo = SettingsRepository(db)
         for key, value in DEFAULT_SETTINGS.items():
-            repo.set(key, str(value), user_id=None)
+            exists = db.query(UserSetting).filter(
+                UserSetting.key == key,
+                UserSetting.user_id.is_(None),
+            ).first()
+            if exists is None:
+                repo.set(key, str(value), user_id=None)
+        legacy_wake_word = db.query(UserSetting).filter(
+            UserSetting.key == "wake_word",
+            UserSetting.user_id.is_(None),
+        ).first()
+        if legacy_wake_word and legacy_wake_word.value.strip().lower() == "hey vision":
+            legacy_wake_word.value = "Vision"
+            db.commit()
     finally:
         db.close()
 

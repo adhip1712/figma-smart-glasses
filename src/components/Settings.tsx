@@ -53,7 +53,12 @@ export default function Settings() {
   const select = (key: string) => (v: string) => { updateSetting(key as keyof typeof settings, v); flash() }
   const flash = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
 
-  const wakeWordOptions = ['Hey Vision', 'Hey Visionary', 'Vision', 'Visionary', 'Hey Nexus', 'Nexus']
+  const [wakeWordDraft, setWakeWordDraft] = useState(settings.wake_word || 'Vision')
+  useEffect(() => setWakeWordDraft(settings.wake_word || 'Vision'), [settings.wake_word])
+  const saveWakeWordDraft = () => {
+    const phrase = wakeWordDraft.trim().split(' ').filter(Boolean).join(' ')
+    if (phrase) { updateSetting('wake_word', phrase); flash() }
+  }
 
   return (
     <div className="p-4 md:p-8 space-y-5 max-w-3xl mx-auto">
@@ -77,9 +82,13 @@ export default function Settings() {
       </div>
 
       <Section title="Voice & Wake Word">
-        <Row label="Wake Word" description="Trigger phrase for voice activation">
-          <Select options={wakeWordOptions} value={settings.wake_word} onChange={select('wake_word')} />
+        <Row label="Custom wake word" description="Type any word or phrase; default is Vision">
+          <input aria-label="Custom wake word" value={wakeWordDraft} maxLength={100} placeholder="Vision, Orion, Hey Computer…" onChange={event => setWakeWordDraft(event.target.value)} onBlur={saveWakeWordDraft} onKeyDown={event => { if (event.key === 'Enter') saveWakeWordDraft() }} className="w-48 max-w-full rounded-lg border border-cyan-400/20 bg-slate-950 px-3 py-2 font-mono text-xs text-cyan-200 outline-none focus:border-cyan-400/60" />
         </Row>
+        <Row label="Detection sensitivity" description="High is default; may cause more false activations">
+          <Select options={["high", "balanced", "low"]} value={settings.wake_word_sensitivity || "high"} onChange={select("wake_word_sensitivity")} />
+        </Row>
+        <p className="font-mono text-[10px] leading-relaxed text-white/35">Wake recognition runs while the app is open and Wake mode is enabled. Browser speech recognition may use an online service. It listens through the operating system’s default microphone; when glasses expose a microphone, select it as the system input. Fully offline custom acoustic detection needs a local speech recognizer or a trained model.</p>
         <Row label="Voice Input" description="Enable microphone for commands">
           <Toggle value={b('voice_input')} onChange={toggle('voice_input')} />
         </Row>

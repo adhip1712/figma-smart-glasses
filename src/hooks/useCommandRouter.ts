@@ -10,14 +10,16 @@ export interface ParsedCommand {
   raw: string
 }
 
-const WAKE_WORDS = ['hey vision', 'hey visionary', 'vision', 'visionary', 'hey nexus', 'nexus']
-
-export function stripWakeWord(text: string): string {
-  const lower = text.toLowerCase().trim()
-  for (const w of WAKE_WORDS) {
-    if (lower.startsWith(w)) return text.slice(w.length).trim()
-  }
-  return text.trim()
+export function stripWakeWord(text: string, wakeWord = 'Vision'): string {
+  const normalizedText = text.trim().split(' ').filter(Boolean).join(' ')
+  const phrase = wakeWord.trim().split(' ').filter(Boolean).join(' ')
+  if (!phrase) return normalizedText
+  const lowerText = normalizedText.toLowerCase()
+  const lowerPhrase = phrase.toLowerCase()
+  if (lowerText.startsWith(`${lowerPhrase} `) || lowerText === lowerPhrase) return normalizedText.slice(phrase.length).trim()
+  const heyPhrase = `hey ${lowerPhrase}`
+  if (lowerText.startsWith(`${heyPhrase} `) || lowerText === heyPhrase) return normalizedText.slice(heyPhrase.length).trim()
+  return normalizedText
 }
 
 export function parseCommand(raw: string): ParsedCommand {

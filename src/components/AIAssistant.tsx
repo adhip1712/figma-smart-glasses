@@ -251,6 +251,7 @@ export default function AIAssistant() {
 
   const { state: voiceState, startListening, stopListening } = useVoice({
     wakeWord: settings.wake_word,
+    sensitivity: settings.wake_word_sensitivity,
     onCommand: handleVoiceCommand,
     enabled: settings.voice_input === 'true',
   })

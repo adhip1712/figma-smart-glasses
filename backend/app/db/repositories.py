@@ -19,7 +19,9 @@ from app.db.models import (
 )
 
 DEFAULT_SETTINGS = {
-    "wake_word": "Hey Vision",
+    "wake_word": "Vision",
+    "wake_word_sensitivity": "high",
+    "wake_word_source": "auto",
     "voice_input": "true",
     "voice_output": "true",
     "microphone": "true",

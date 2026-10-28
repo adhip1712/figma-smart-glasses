@@ -3,6 +3,8 @@ import { settingsApi } from '../api/services'
 
 interface AppSettings {
   wake_word: string
+  wake_word_sensitivity: string
+  wake_word_source: string
   voice_input: string
   voice_output: string
   microphone: string
@@ -15,7 +17,9 @@ interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-  wake_word: 'Hey Vision',
+  wake_word: 'Vision',
+  wake_word_sensitivity: 'high',
+  wake_word_source: 'auto',
   voice_input: 'true',
   voice_output: 'true',
   microphone: 'true',

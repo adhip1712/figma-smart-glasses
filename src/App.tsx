@@ -228,6 +228,7 @@ function AppInner() {
 
   const { state: voiceState, startListening } = useVoice({
     wakeWord: settings.wake_word,
+    sensitivity: settings.wake_word_sensitivity,
     onCommand: handleVoiceCommand,
     enabled: settings.voice_input === 'true',
   })
